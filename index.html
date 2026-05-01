@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya Savings Tracker</title>
+  <style>
+    :root {
+      --primary: #6B4EFF;
+      --accent: #00E5B8;
+      --bg: #0F0F1A;
+      --card: #1A1A2E;
+      --text: #E0E0FF;
+      --text-light: #A0A0CC;
+      --profit: #00E5B8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    header { text-align: center; padding: 20px 0 10px; }
+
+    .logo {
+      font-size: 2.6rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Music Player */
+    #musicPlayer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1A1A2E;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 3000;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      border: 1px solid var(--accent);
+    }
+
+    #musicPlayer button {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Currency Selector */
+    #currencySelector {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #1A1A2E;
+      padding: 10px 16px;
+      border-radius: 9999px;
+      z-index: 3000;
+      border: 1px solid var(--accent);
+    }
+
+    /* Notification */
+    #notification {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      background: #1A1A2E;
+      color: var(--accent);
+      padding: 14px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(107, 78, 255, 0.4);
+      border: 1px solid var(--accent);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 2900;
+      font-weight: 500;
+    }
+
+    /* Logs Panel */
+    #logsPanel {
+      position: fixed;
+      top: 0; right: -420px;
+      width: 420px;
+      height: 100vh;
+      background: #161625;
+      border-left: 3px solid var(--primary);
+      padding: 20px;
+      overflow-y: auto;
+      transition: right 0.4s ease;
+      z-index: 2500;
+    }
+
+    #logsPanel.open { right: 0; }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    .log-entry {
+      background: #1F1F2E;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-size: 0.88rem;
+      border-left: 4px solid var(--primary);
+    }
+
+    .log-time { font-size: 0.75rem; color: var(--text-light); margin-bottom: 4px; }
+
+    .section-title {
+      color: var(--accent);
+      margin: 30px 0 15px;
+      font-size: 1.4rem;
+    }
+
+    .savings-cart, .profit-card {
+      border-radius: 28px;
+      padding: 28px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    }
+
+    .savings-cart { background: linear-gradient(135deg, #1F1F3A, #2A2A4A); border: 1px solid rgba(107, 78, 255, 0.3); }
+    .profit-card { background: linear-gradient(135deg, #1F2A1F, #2A3A2A); border: 1px solid rgba(0, 229, 184, 0.3); }
+
+    .total-amount, .profit-amount { font-size: 3.2rem; font-weight: 700; }
+    .as-of { font-size: 0.95rem; color: var(--text-light); }
+
+    .add-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 9999px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 auto 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .record-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 28px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .record-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .record-name { font-size: 1.35rem; font-weight: 600; }
+
+    .record-actions button {
+      padding: 6px 12px;
+      margin-left: 6px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .edit-btn { background: #4a6cf7; color: white; }
+    .delete-btn { background: #d9534f; color: white; }
+
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+    th, td {
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    th { color: var(--text-light); font-size: 0.9rem; }
+
+    .status-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+    .status-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .success { background: #00E5B8; color: #000; }
+    .warning { background: #FFC107; color: #000; }
+    .pending { background: #6B4EFF; color: white; }
+
+    .missing-input {
+      width: 85px;
+      padding: 5px 8px;
+      background: #25253F;
+      border: 1px solid #555;
+      border-radius: 6px;
+      color: white;
+    }
+
+    input[type="number"], input[type="text"] {
+      background: #25253F;
+      border: 1px solid #555;
+      border-radius: 6px;
+      color: white;
+      padding: 5px 8px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      background: rgba(255,255,255,0.03);
+      padding: 20px;
+      border-radius: 16px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border-radius: 24px;
+      width: 90%;
+      max-width: 420px;
+      padding: 32px;
+    }
+
+    label { display: block; margin: 16px 0 8px; color: var(--text-light); }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cancel-btn { background: #33334D; color: white; }
+    .create-btn { background: var(--primary); color: white; }
+  </style>
+</head>
+<body>
+
+  <!-- Music Player -->
+  <div id="musicPlayer">
+    <button id="playBtn">⏸️</button>
+    <span style="font-size:0.95rem; color:var(--accent);">Super Shy - NewJeans</span>
+  </div>
+
+  <!-- Currency Selector -->
+  <div id="currencySelector">
+    <label for="currency">Currency: </label>
+    <select id="currency" onchange="changeCurrency()" style="background:#25253F; color:white; border:none; padding:8px; border-radius:8px;">
+      <option value="PHP">PHP (₱)</option>
+      <option value="USD">USD ($)</option>
+    </select>
+  </div>
+
+  <!-- Notification -->
+  <div id="notification">
+    <span id="notificationText"></span>
+  </div>
+
+  <!-- Logs Panel -->
+  <div id="logsPanel">
+    <div class="log-header">
+      <h2>Activity Logs</h2>
+      <button onclick="clearLogs()" style="background:#d9534f; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">Clear</button>
+    </div>
+    <div id="logsContainer"></div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div class="logo">Maya</div>
+      <p style="color:#A0A0CC; margin-top:4px;">Savings Tracker</p>
+    </header>
+
+    <div style="text-align:right; margin-bottom:12px;">
+      <button onclick="toggleLogs()" style="background:#33334D; color:white; border:none; padding:10px 18px; border-radius:9999px; cursor:pointer;">
+        📜 View Logs
+      </button>
+    </div>
+
+    <!-- Total Savings -->
+    <div class="savings-cart">
+      <div class="cart-header">
+        <div>
+          <div style="font-size:1.1rem; color:var(--accent); font-weight:600;">TOTAL SAVINGS</div>
+          <div class="total-amount" id="totalSaved">₱1,312</div>
+        </div>
+        <div style="font-size:2.5rem;">💰</div>
+      </div>
+      <div class="as-of" id="asOfDate">As of April 29, 2026</div>
+    </div>
+
+    <!-- Overall Profit -->
+    <div class="profit-card">
+      <div class="profit-header">
+        <div>
+          <div class="profit-title">OVERALL PROFIT</div>
+          <div class="profit-amount" id="overallProfit">₱1,312</div>
+        </div>
+        <div style="font-size:2rem; color:var(--profit);">📈</div>
+      </div>
+      <button onclick="showEditProfitModal()" style="background:rgba(0,229,184,0.2); color:var(--profit); border:none; padding:8px 16px; border-radius:9999px; cursor:pointer;">
+        ✏️ Edit Profit Amount
+      </button>
+    </div>
+
+    <button class="add-btn" onclick="showAddModal()">
+      <span style="font-size:1.5rem;">+</span> Add New Record
+    </button>
+
+    <!-- Maya Savings Records -->
+    <div class="section-title">Maya Savings Records</div>
+    <div id="recordsContainer"></div>
+  </div>
+
+  <!-- Background Music -->
+  <audio id="bgMusic" loop autoplay>
+    <source src="Super Shy.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Add New Record Modal -->
+  <div class="modal" id="addModal">
+    <div class="modal-content">
+      <h2>Add New Savings Record</h2>
+      <label>Record Name</label>
+      <input type="text" id="recordName" value="Maya Savings Record 5">
+
+      <label>Week 1 Date (MM/DD/YY)</label>
+      <input type="text" id="startDate" placeholder="05/04/26">
+
+      <label>Number of Weeks</label>
+      <select id="numWeeks" style="width:100%; padding:14px; background:#25253F; border:1px solid #555; border-radius:12px; color:white;">
+        <option value="4">4 Weeks</option>
+        <option value="3">3 Weeks</option>
+        <option value="2">2 Weeks</option>
+        <option value="1">1 Week</option>
+      </select>
+
+      <div class="modal-buttons">
+        <button class="cancel-btn" onclick="hideAddModal()">Cancel</button>
+        <button class="create-btn" onclick="addNewRecord()">Create Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Record Modal -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h2>Edit Record Info</h2>
+      <input type="hidden" id="editId">
+      <label>Record Name</label>
+      <input type="text" id="editName">
+      <label>Week 1 Date</label>
+      <input type="text" id="editStartDate">
+
+      <div class="modal-buttons">
+        <button class="cancel-btn" onclick="hideEditModal()">Cancel</button>
+        <button class="create-btn" onclick="saveEditRecord()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profit Modal -->
+  <div class="modal" id="editProfitModal">
+    <div class="modal-content">
+      <h2>Edit Overall Profit</h2>
+      <label>Amount (₱)</label>
+      <input type="number" id="profitInput">
+
+      <div class="modal-buttons">
+        <button class="cancel-btn" onclick="hideEditProfitModal()">Cancel</button>
+        <button class="create-btn" onclick="saveProfitAmount()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let records = [];
+    let overallProfit = 1312;
+    let currentCurrency = "PHP";
+    let exchangeRate = 0.017; // 1 PHP ≈ 0.017 USD
+    let logs = [];
+
+    const music = document.getElementById('bgMusic');
+    const playBtn = document.getElementById('playBtn');
+
+    function tryPlayMusic() {
+      music.play().catch(() => {});
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (music.paused) {
+        music.play();
+        playBtn.textContent = '⏸️';
+      } else {
+        music.pause();
+        playBtn.textContent = '▶️';
+      }
+    });
+
+    function getPHDate() {
+      const options = { timeZone: 'Asia/Manila', month: 'long', day: 'numeric', year: 'numeric' };
+      return new Date().toLocaleDateString('en-US', options);
+    }
+
+    function getCurrentPHTime() {
+      return new Date().toLocaleString('en-US', { 
+        timeZone: 'Asia/Manila',
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit'
+      });
+    }
+
+    function formatAmount(amount) {
+      if (currentCurrency === "USD") {
+        return "$" + (amount * exchangeRate).toFixed(2);
+      }
+      return "₱" + amount;
+    }
+
+    function changeCurrency() {
+      currentCurrency = document.getElementById('currency').value;
+      renderAllRecords();
+    }
+
+    function addLog(action) {
+      logs.unshift({ time: getCurrentPHTime(), action: action });
+      if (logs.length > 100) logs.pop();
+      localStorage.setItem('mayaLogs', JSON.stringify(logs));
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('logsContainer');
+      let html = '';
+      logs.forEach(log => {
+        html += `<div class="log-entry"><div class="log-time">${log.time}</div><div>${log.action}</div></div>`;
+      });
+      container.innerHTML = html || '<p style="color:#666; text-align:center; padding:20px;">No logs yet</p>';
+    }
+
+    function toggleLogs() {
+      document.getElementById('logsPanel').classList.toggle('open');
+    }
+
+    function clearLogs() {
+      if (confirm("Clear all logs?")) {
+        logs = [];
+        localStorage.setItem('mayaLogs', JSON.stringify(logs));
+        renderLogs();
+      }
+    }
+
+    function showNotification(message) {
+      const notif = document.getElementById('notification');
+      document.getElementById('notificationText').innerHTML = message;
+      notif.style.display = 'flex';
+      setTimeout(() => {
+        notif.style.opacity = '0';
+        setTimeout(() => { notif.style.display = 'none'; notif.style.opacity = '1'; }, 300);
+      }, 2500);
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem('mayaSavingsRecords');
+      if (saved) records = JSON.parse(saved);
+      else {
+        records = [
+          {
+            id: 1,
+            name: "Maya Savings Record 1",
+            startDate: "04/01/26",
+            weeks: [
+              { week: 1, target: 100, received: 100, status: "success", missing: 0, date: "" },
+              { week: 2, target: 100, received: 100, status: "success", missing: 0, date: "" },
+              { week: 3, target: 100, received: 100, status: "success", missing: 0, date: "" },
+              { week: 4, target: 100, received: 100, status: "success", missing: 0, date: "" }
+            ]
+          },
+          {
+            id: 2,
+            name: "Maya Savings Record 2",
+            startDate: "04/20/26",
+            weeks: [
+              { week: 1, target: 100, received: 0, status: "pending", missing: 0, date: "04/27/26" },
+              { week: 2, target: 100, received: 0, status: "pending", missing: 0, date: "05/04/26" },
+              { week: 3, target: 100, received: 0, status: "pending", missing: 0, date: "05/11/26" },
+              { week: 4, target: 100, received: 0, status: "pending", missing: 0, date: "05/18/26" }
+            ]
+          },
+          {
+            id: 3,
+            name: "Maya Savings Record 3",
+            startDate: "05/18/26",
+            weeks: [
+              { week: 1, target: 100, received: 0, status: "pending", missing: 0, date: "05/25/26" },
+              { week: 2, target: 100, received: 0, status: "pending", missing: 0, date: "06/01/26" },
+              { week: 3, target: 100, received: 0, status: "pending", missing: 0, date: "06/08/26" },
+              { week: 4, target: 100, received: 0, status: "pending", missing: 0, date: "06/15/26" }
+            ]
+          },
+          {
+            id: 4,
+            name: "Maya Savings Record 4",
+            startDate: "06/15/26",
+            weeks: [
+              { week: 1, target: 100, received: 0, status: "pending", missing: 0, date: "06/22/26" },
+              { week: 2, target: 100, received: 0, status: "pending", missing: 0, date: "06/29/26" },
+              { week: 3, target: 100, received: 0, status: "pending", missing: 0, date: "07/06/26" },
+              { week: 4, target: 100, received: 0, status: "pending", missing: 0, date: "07/13/26" }
+            ]
+          }
+        ];
+        saveRecords();
+      }
+
+      document.getElementById('asOfDate').textContent = `As of ${getPHDate()}`;
+      renderAllRecords();
+    }
+
+    function saveRecords() {
+      localStorage.setItem('mayaSavingsRecords', JSON.stringify(records));
+    }
+
+    function calculateActual(weeks) {
+      return weeks.reduce((sum, w) => sum + (w.received || 0), 0);
+    }
+
+    function formatDate(baseDate, weekNum, customDate = "") {
+      if (customDate) return customDate;
+      try {
+        const [m,d,y] = baseDate.split('/').map(Number);
+        const date = new Date(2000 + y, m-1, d);
+        date.setDate(date.getDate() + (weekNum-1)*7);
+        return date.toLocaleDateString('en-US', {month:'2-digit', day:'2-digit', year:'2-digit'});
+      } catch(e) { return "—"; }
+    }
+
+    function getStatusHTML(recordId, week) {
+      let html = `<div class="status-group">`;
+      html += `<button class="status-btn success" onclick="setStatus(${recordId}, ${week.week}, 'success')">✅ Received</button>`;
+      html += `<button class="status-btn warning" onclick="setStatus(${recordId}, ${week.week}, 'warning')">⚠️ Partial</button>`;
+      html += `<button class="status-btn pending" onclick="setStatus(${recordId}, ${week.week}, 'pending')">⏳ Pending</button>`;
+
+      if (week.status === "warning") {
+        html += `<input type="number" class="missing-input" value="${week.missing || 0}" 
+                 onchange="updateMissing(${recordId}, ${week.week}, this.value)">`;
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    function renderRecord(record) {
+      const actual = calculateActual(record.weeks);
+      const expected = record.weeks.length * 100;
+
+      let html = `
+        <div class="record-card">
+          <div class="record-header">
+            <div class="record-name">${record.name}</div>
+            <div>
+              <button class="action-btn edit-btn" onclick="editRecord(${record.id})">Edit</button>
+              <button class="action-btn delete-btn" onclick="deleteRecord(${record.id})">Delete</button>
+            </div>
+          </div>
+          <table>
+            <tr>
+              <th>Week</th>
+              <th>Date</th>
+              <th>Target</th>
+              <th>Received</th>
+              <th>Status</th>
+            </tr>`;
+
+      record.weeks.forEach(week => {
+        const currentDate = week.date || formatDate(record.startDate, week.week);
+        html += `
+          <tr>
+            <td><strong>Week ${week.week}</strong></td>
+            <td><input type="text" value="${currentDate}" onchange="updateWeekDate(${record.id}, ${week.week}, this.value)" style="width:88px;"></td>
+            <td>${formatAmount(week.target)}</td>
+            <td><input type="number" value="${week.received}" onchange="updateReceived(${record.id}, ${week.week}, this.value)" style="width:85px;"></td>
+            <td>${getStatusHTML(record.id, week)}</td>
+          </tr>`;
+      });
+
+      html += `</table>
+        <div class="summary">
+          <div><div class="summary-label">EXPECTED</div><div class="summary-value">${formatAmount(expected)}</div></div>
+          <div><div class="summary-label">ACTUAL SAVED</div><div class="summary-value" style="color:${actual >= expected ? '#00E5B8' : 'white'}">${formatAmount(actual)}</div></div>
+        </div>
+      </div>`;
+      return html;
+    }
+
+    function renderAllRecords() {
+      let html = '';
+      records.forEach(r => html += renderRecord(r));
+      document.getElementById('recordsContainer').innerHTML = html;
+
+      const total = records.reduce((sum, r) => sum + calculateActual(r.weeks), 0);
+      document.getElementById('totalSaved').textContent = formatAmount(total);
+      document.getElementById('overallProfit').textContent = formatAmount(overallProfit);
+    }
+
+    function updateReceived(recordId, weekNum, value) {
+      const record = records.find(r => r.id === recordId);
+      const week = record.weeks.find(w => w.week === weekNum);
+      if (week) {
+        week.received = parseFloat(value) || 0;
+        saveRecords();
+        renderAllRecords();
+        showNotification(`Week ${weekNum} updated`);
+      }
+    }
+
+    function updateWeekDate(recordId, weekNum, newDate) {
+      const record = records.find(r => r.id === recordId);
+      const week = record.weeks.find(w => w.week === weekNum);
+      if (week) {
+        week.date = newDate.trim();
+        saveRecords();
+        renderAllRecords();
+        showNotification(`Week ${weekNum} date updated`);
+      }
+    }
+
+    function updateMissing(recordId, weekNum, value) {
+      const record = records.find(r => r.id === recordId);
+      const week = record.weeks.find(w => w.week === weekNum);
+      if (week) {
+        week.missing = parseFloat(value) || 0;
+        week.received = week.target - week.missing;
+        saveRecords();
+        renderAllRecords();
+      }
+    }
+
+    function setStatus(recordId, weekNum, newStatus) {
+      const record = records.find(r => r.id === recordId);
+      const week = record.weeks.find(w => w.week === weekNum);
+      if (!week) return;
+
+      week.status = newStatus;
+      if (newStatus === "success") {
+        week.received = week.target;
+        week.missing = 0;
+      } else if (newStatus === "pending") {
+        week.received = 0;
+        week.missing = 0;
+      } else if (newStatus === "warning") {
+        if (!week.missing) week.missing = 50;
+        week.received = week.target - week.missing;
+      }
+
+      saveRecords();
+      renderAllRecords();
+      showNotification(`Week ${weekNum} status changed`);
+    }
+
+    function showAddModal() {
+      document.getElementById('startDate').value = getNextMonday();
+      document.getElementById('recordName').value = `Maya Savings Record ${records.length + 1}`;
+      document.getElementById('addModal').style.display = 'flex';
+    }
+
+    function hideAddModal() {
+      document.getElementById('addModal').style.display = 'none';
+    }
+
+    function addNewRecord() {
+      const name = document.getElementById('recordName').value.trim() || `Maya Savings Record ${records.length + 1}`;
+      let startDate = document.getElementById('startDate').value.trim();
+      const numWeeks = parseInt(document.getElementById('numWeeks').value);
+
+      if (!startDate) startDate = getNextMonday();
+
+      const newRecord = {
+        id: Date.now(),
+        name: name,
+        startDate: startDate,
+        weeks: Array.from({length: numWeeks}, (_, i) => ({
+          week: i + 1,
+          target: 100,
+          received: 0,
+          status: "pending",
+          missing: 0,
+          date: ""
+        }))
+      };
+
+      records.push(newRecord);
+      saveRecords();
+      renderAllRecords();
+      hideAddModal();
+      showNotification(`Record "${name}" created`);
+    }
+
+    function editRecord(id) {
+      showNotification("Edit feature ready");
+    }
+
+    function deleteRecord(id) {
+      if (confirm("Delete this record?")) {
+        records = records.filter(r => r.id !== id);
+        saveRecords();
+        renderAllRecords();
+        showNotification("Record deleted");
+      }
+    }
+
+    function showEditProfitModal() {
+      document.getElementById('editProfitModal').style.display = 'flex';
+    }
+
+    function hideEditProfitModal() {
+      document.getElementById('editProfitModal').style.display = 'none';
+    }
+
+    function saveProfitAmount() {
+      const val = parseFloat(document.getElementById('profitInput').value);
+      if (!isNaN(val) && val >= 0) {
+        overallProfit = val;
+        saveProfit();
+        renderAllRecords();
+        hideEditProfitModal();
+        showNotification("Overall Profit updated");
+      }
+    }
+
+    function getNextMonday() {
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+      let days = (1 - now.getDay() + 7) % 7;
+      if (days === 0) days = 7;
+      const next = new Date(now);
+      next.setDate(now.getDate() + days);
+      return next.toLocaleDateString('en-US', {month:'2-digit', day:'2-digit', year:'2-digit'});
+    }
+
+    function saveRecords() {
+      localStorage.setItem('mayaSavingsRecords', JSON.stringify(records));
+    }
+
+    window.onload = () => {
+      loadData();
+      tryPlayMusic();
+    };
+  </script>
+</body>
+</html>
