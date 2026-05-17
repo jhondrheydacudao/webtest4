@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeStream - Hub Pro</title>
+    <title>AnimeStream - Intelligent Sync Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -71,7 +71,7 @@
 
         <!-- Dashboard View -->
         <div id="homeView" class="space-y-12">
-            <!-- Popular Hot Episodes Section -->
+            <!-- Popular Episodes Section -->
             <div id="popularSection">
                 <h2 class="text-2xl font-bold mb-6 text-white border-l-4 border-amber-500 pl-3 flex items-center gap-2">
                     <i class="fa-solid fa-fire text-amber-500"></i> Hot Popular Episodes
@@ -209,14 +209,12 @@
             }
         }
 
-        // PARSES AND CLEAN SLUGS DIRECTLY OUT OF DEEP API URL PATH STRINGS
         function extractSlug(url, fallbackSlug) {
             if (!url) return fallbackSlug;
             const cleaned = url.replace(/\/$/, ''); 
             return cleaned.substring(cleaned.lastIndexOf('/') + 1);
         }
 
-        // FETCHES POPULAR EPISODES, HOME TRENDING, AND LATEST RELEASES ALL AT ONCE
         async function loadDashboard() {
             showLoading(true);
             viewingState = 'dashboard';
@@ -244,14 +242,14 @@
 
                 homeView.classList.remove('hidden');
 
-                // 1. Render Popular EPISODES (Direct player links)
+                // Render Popular EPISODES
                 if (Array.isArray(popularEpisodes)) {
                     popularGrid.innerHTML = popularEpisodes.map(item => {
                         const title = item.title || "Unknown Episode";
                         const img = item.thumbnail || item.poster || "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300";
                         const epSlug = extractSlug(item.url, item.id);
                         return `
-                            <div onclick="playDirectEpisode('${epSlug}', '${title}')" class="anime-card bg-[#111827] rounded-xl overflow-hidden border border-gray-800 hover:border-amber-500/50 transition duration-300 cursor-pointer shadow-lg group">
+                            <div onclick="resolveAndPlayPopularEpisode('${epSlug}')" class="anime-card bg-[#111827] rounded-xl overflow-hidden border border-gray-800 hover:border-amber-500/50 transition duration-300 cursor-pointer shadow-lg group">
                                 <div class="relative aspect-[3/4] overflow-hidden bg-gray-900">
                                     <img src="${img}" alt="${title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
                                     <div class="play-btn absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 scale-90 transition duration-300">
@@ -263,16 +261,48 @@
                     }).join('');
                 }
 
-                // 2. Render Trending Shows
                 if (Array.isArray(trendingItems)) trendingGrid.innerHTML = generateCardsHtml(trendingItems);
-                
-                // 3. Render Latest Releases
                 if (Array.isArray(latestItems)) latestGrid.innerHTML = generateCardsHtml(latestItems);
 
             } catch (err) {
                 console.error(err);
                 homeView.classList.remove('hidden');
             } finally { showLoading(false); }
+        }
+
+        // USES THE /parse/{slug} ENDPOINT TO RESOLVE PARENT METRICS FOR INDIVIDUAL EPISODES
+        async function resolveAndPlayPopularEpisode(episodeSlug) {
+            showLoading(true);
+            try {
+                const res = await fetch(`${API_BASE}/parse/${episodeSlug}`);
+                const data = await res.json();
+                
+                // Extract structural data returned from your parser configuration
+                // If it returns parent slug data under an anime or show key, use it. Otherwise, fall back gracefully
+                const parentAnimeSlug = data.anime_slug || data.slug || data.parent_slug || episodeSlug.split('-episode-')[0];
+                
+                // Hand-off control cleanly to full details renderer to assemble the matching workspace
+                await loadAnimeDetails(parentAnimeSlug);
+                
+                // Immediately pick and highlight the specific target popular episode inside the listing pane
+                const targetBtn = document.getElementById(`btn-${episodeSlug}`);
+                if(targetBtn) {
+                    targetBtn.click();
+                    targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    // Fallback to fetch raw stream directly if out of auto-gen bounds
+                    playEpisode(episodeSlug, "Popular Stream Profile", null);
+                }
+            } catch(e) {
+                console.error("Parser resolution failed:", e);
+                // Last ditch recovery effort: try launching the stream blindly
+                homeView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+                resetPlayer();
+                playEpisode(episodeSlug, "Direct Stream", null);
+            } finally {
+                loading.classList.add('hidden');
+            }
         }
 
         async function handleGenreFilter() {
@@ -339,24 +369,6 @@
             }).join('');
         }
 
-        // ACTIONS THE POPULAR HOT-EPISODE DIRECTLY INTO STREAMS WITHOUT DETAIL WALLS
-        function playDirectEpisode(epSlug, epTitle) {
-            homeView.classList.add('hidden');
-            filterResultsView.classList.add('hidden');
-            detailView.classList.remove('hidden');
-            
-            resetPlayer();
-            
-            document.getElementById('animeTitle').innerText = epTitle.split("Episode")[0].trim();
-            animeDescription.innerText = "Direct access streaming sequence initiated from Popular Dashboard row.";
-            document.getElementById('episodeList').innerHTML = `
-                <div class="p-3 bg-gray-800/40 text-gray-400 text-xs text-center rounded-lg border border-gray-700/60">
-                    Direct streaming mode active. Timeline lists are generated on demand via player controls.
-                </div>`;
-            
-            playEpisode(epSlug, epTitle, null);
-        }
-
         async function loadAnimeDetails(slug) {
             showLoading(true);
             resetPlayer();
@@ -371,7 +383,7 @@
                 let episodes = data.episodes || [];
                 
                 if (episodes.length === 0) {
-                    for (let i = 1; i <= 12; i++) {
+                    for (let i = 1; i <= 24; i++) {
                         const epSlug = `${slug}-episode-${i}-english-subbed`;
                         episodes.push({ title: `Episode ${i}`, slug: epSlug });
                     }
@@ -384,11 +396,6 @@
                         <i class="fa-solid fa-circle-play text-xs text-gray-500 group-hover:text-violet-400 transition"></i>
                     </button>
                 `).join('');
-                
-                const targetFirstEpSlug = `${slug}-episode-1-english-subbed`;
-                const firstBtn = document.getElementById(`btn-${targetFirstEpSlug}`);
-                if(firstBtn) firstBtn.click();
-                else if (document.querySelector('.ep-btn')) document.querySelector('.ep-btn').click();
 
             } catch (err) {
                 console.error(err);
