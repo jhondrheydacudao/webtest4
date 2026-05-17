@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeStream - Hub with Filters</title>
+    <title>AnimeStream - Intelligent Watch Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -35,7 +35,6 @@
         <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-4 text-sm">
             <span class="text-gray-400 font-medium flex items-center gap-1.5"><i class="fa-solid fa-sliders text-violet-400"></i> Filter By:</span>
             
-            <!-- Genre Filter -->
             <select id="genreFilter" onchange="handleGenreFilter()" class="bg-[#1f2937] text-gray-200 border border-gray-700 rounded-lg px-3 py-1.5 focus:outline-none focus:border-violet-500">
                 <option value="">All Genres</option>
                 <option value="action">Action</option>
@@ -48,7 +47,6 @@
                 <option value="sci-fi">Sci-Fi</option>
             </select>
 
-            <!-- Season Filter -->
             <select id="seasonFilter" onchange="handleSeasonFilter()" class="bg-[#1f2937] text-gray-200 border border-gray-700 rounded-lg px-3 py-1.5 focus:outline-none focus:border-violet-500">
                 <option value="">All Seasons</option>
                 <option value="spring">Spring</option>
@@ -57,7 +55,6 @@
                 <option value="winter">Winter</option>
             </select>
 
-            <!-- Clear Filters Button -->
             <button onclick="resetFiltersAndDashboard()" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1.5 rounded-md transition ml-auto">
                 Reset Dashboard
             </button>
@@ -72,37 +69,34 @@
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
         </div>
 
-        <!-- Dashboard View (Home/Latest Sections) -->
+        <!-- Dashboard View -->
         <div id="homeView" class="space-y-12">
-            <!-- Popular/Trending Section -->
             <div id="popularSection">
                 <h2 class="text-2xl font-bold mb-6 text-white border-l-4 border-violet-500 pl-3">Trending & Popular</h2>
                 <div id="popularGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             </div>
 
-            <!-- Latest Section -->
             <div id="latestSection">
                 <h2 class="text-2xl font-bold mb-6 text-white border-l-4 border-fuchsia-500 pl-3">Latest Releases</h2>
                 <div id="latestGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             </div>
         </div>
 
-        <!-- Dynamic Results View (Shared by Search, Genre, and Season filters) -->
+        <!-- Dynamic Results View -->
         <div id="filterResultsView" class="hidden">
             <h2 id="filterResultsTitle" class="text-2xl font-bold mb-6 text-white border-l-4 border-blue-500 pl-3">Filtered Content</h2>
             <div id="filterResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
         </div>
 
-        <!-- Dedicated Player & Watch Workspace -->
+        <!-- Dedicated Player Workspace -->
         <div id="detailView" class="hidden">
             <button onclick="backToBrowsing()" class="mb-6 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition text-sm">
                 <i class="fa-solid fa-arrow-left"></i> Back to Catalog
             </button>
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Video Delivery Panel -->
+                <!-- Video Panel -->
                 <div class="lg:col-span-2 space-y-4">
-                    <!-- Player Screen Wrapper -->
                     <div class="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800 flex items-center justify-center">
                         <iframe id="videoIframe" src="" class="absolute top-0 left-0 w-full h-full hidden" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>
                         
@@ -112,7 +106,7 @@
                         </div>
                     </div>
 
-                    <!-- Video Controls & Server Switcher -->
+                    <!-- Video Controls -->
                     <div class="bg-[#111827] border border-gray-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
                         <div class="max-w-md">
                             <h1 id="animeTitle" class="text-xl font-bold text-white truncate">Loading Anime...</h1>
@@ -126,14 +120,34 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Description Area -->
+                    <div class="bg-[#111827] border border-gray-800 p-4 rounded-xl">
+                        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Synopsis</h3>
+                        <p id="animeDescription" class="text-sm text-gray-300 leading-relaxed">No description available.</p>
+                    </div>
                 </div>
 
-                <!-- Sidebar Navigation Pane -->
+                <!-- Sidebar Navigation Panel -->
                 <div class="bg-[#111827] p-4 rounded-xl border border-gray-800 h-[520px] flex flex-col">
                     <div class="border-b border-gray-800 pb-3 mb-3">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-list-ol text-violet-500"></i> Available Episodes
+                            <i class="fa-solid fa-list-ol text-violet-500"></i> Video Navigation
                         </h3>
+                    </div>
+                    
+                    <!-- Dynamic Autogenerated Control Buttons -->
+                    <div class="flex gap-2 mb-4">
+                        <button id="prevEpBtn" onclick="playAdjacentEpisode('prev')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 px-3 rounded-lg text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-backward mr-1"></i> Prev Episode
+                        </button>
+                        <button id="nextEpBtn" onclick="playAdjacentEpisode('next')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 px-3 rounded-lg text-xs font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            Next Episode <i class="fa-solid fa-forward ml-1"></i>
+                        </button>
+                    </div>
+
+                    <div class="border-b border-gray-800 pb-2 mb-2">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Quick Select Array</span>
                     </div>
                     <div id="episodeList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
                 </div>
@@ -144,7 +158,11 @@
     <script>
         const API_BASE = 'https://anime2928.vercel.app';
         let currentEmbeds = [];
-        let viewingState = 'dashboard'; // Keeps track of where the user was ('dashboard' or 'filtered')
+        let viewingState = 'dashboard';
+        
+        // Navigation tracking state configuration variables
+        let nextEpisodeSlug = null;
+        let prevEpisodeSlug = null;
 
         const homeView = document.getElementById('homeView');
         const filterResultsView = document.getElementById('filterResultsView');
@@ -162,6 +180,7 @@
         const videoIframe = document.getElementById('videoIframe');
         const playerPlaceholder = document.getElementById('playerPlaceholder');
         const serverSelect = document.getElementById('serverSelect');
+        const animeDescription = document.getElementById('animeDescription');
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboard();
@@ -180,13 +199,11 @@
             }
         }
 
-        // LOAD BASE DASHBOARD (HOME + LATEST)
         async function loadDashboard() {
             showLoading(true);
             viewingState = 'dashboard';
             filterResultsView.classList.add('hidden');
             detailView.classList.add('hidden');
-            
             popularGrid.innerHTML = '';
             latestGrid.innerHTML = '';
 
@@ -195,7 +212,6 @@
                     fetch(`${API_BASE}/home`),
                     fetch(`${API_BASE}/latest`)
                 ]);
-
                 const homeData = await homeRes.json();
                 const latestData = await latestRes.json();
 
@@ -203,114 +219,58 @@
                 const latestItems = latestData.results || latestData.latest || latestData;
 
                 homeView.classList.remove('hidden');
-
                 if (Array.isArray(popularItems)) popularGrid.innerHTML = generateCardsHtml(popularItems);
                 if (Array.isArray(latestItems)) latestGrid.innerHTML = generateCardsHtml(latestItems);
-
             } catch (err) {
                 console.error(err);
                 homeView.classList.remove('hidden');
-                popularGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Error loading dashboard items.</p>`;
-            } finally { 
-                showLoading(false); 
-            }
+            } finally { showLoading(false); }
         }
 
-        // GENRE FILTER CONTROLLER
         async function handleGenreFilter() {
             const genre = genreFilter.value;
             if (!genre) return;
-            
-            // Reset alternative filter dropdown selection
-            seasonFilter.value = "";
-            searchInput.value = "";
-            
-            showLoading(true);
-            viewingState = 'filtered';
-            filterResultsGrid.innerHTML = '';
+            seasonFilter.value = ""; searchInput.value = "";
+            showLoading(true); viewingState = 'filtered'; filterResultsGrid.innerHTML = '';
             filterResultsTitle.innerText = `Genre: ${genre.charAt(0).toUpperCase() + genre.slice(1)}`;
 
             try {
                 const res = await fetch(`${API_BASE}/genre/${genre}`);
                 const data = await res.json();
                 const items = data.results || data;
-
                 filterResultsView.classList.remove('hidden');
-                if (Array.isArray(items) && items.length > 0) {
-                    filterResultsGrid.innerHTML = generateCardsHtml(items);
-                } else {
-                    filterResultsGrid.innerHTML = `<p class="text-gray-400 col-span-full text-center">No anime found in this genre.</p>`;
-                }
-            } catch (err) {
-                console.error(err);
-                filterResultsView.classList.remove('hidden');
-                filterResultsGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Failed to fetch genre items.</p>`;
-            } finally {
-                showLoading(false);
-            }
+                if (Array.isArray(items) && items.length > 0) filterResultsGrid.innerHTML = generateCardsHtml(items);
+            } catch (err) { console.error(err); } finally { showLoading(false); }
         }
 
-        // SEASON FILTER CONTROLLER
         async function handleSeasonFilter() {
             const season = seasonFilter.value;
             if (!season) return;
-            
-            // Reset alternative filter dropdown selection
-            genreFilter.value = "";
-            searchInput.value = "";
-
-            showLoading(true);
-            viewingState = 'filtered';
-            filterResultsGrid.innerHTML = '';
+            genreFilter.value = ""; searchInput.value = "";
+            showLoading(true); viewingState = 'filtered'; filterResultsGrid.innerHTML = '';
             filterResultsTitle.innerText = `Season: ${season.charAt(0).toUpperCase() + season.slice(1)}`;
 
             try {
                 const res = await fetch(`${API_BASE}/season/${season}`);
                 const data = await res.json();
                 const items = data.results || data;
-
                 filterResultsView.classList.remove('hidden');
-                if (Array.isArray(items) && items.length > 0) {
-                    filterResultsGrid.innerHTML = generateCardsHtml(items);
-                } else {
-                    filterResultsGrid.innerHTML = `<p class="text-gray-400 col-span-full text-center">No anime found matching this season.</p>`;
-                }
-            } catch (err) {
-                console.error(err);
-                filterResultsView.classList.remove('hidden');
-                filterResultsGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Failed to fetch seasonal items.</p>`;
-            } finally {
-                showLoading(false);
-            }
+                if (Array.isArray(items) && items.length > 0) filterResultsGrid.innerHTML = generateCardsHtml(items);
+            } catch (err) { console.error(err); } finally { showLoading(false); }
         }
 
-        // SEARCH MANAGER
         async function handleSearch(query) {
-            genreFilter.value = "";
-            seasonFilter.value = "";
-            
-            showLoading(true);
-            viewingState = 'filtered';
-            filterResultsGrid.innerHTML = '';
+            genreFilter.value = ""; seasonFilter.value = "";
+            showLoading(true); viewingState = 'filtered'; filterResultsGrid.innerHTML = '';
             filterResultsTitle.innerText = `Search Results for "${query}"`;
 
             try {
                 const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
                 const data = await res.json();
                 const items = data.results || data;
-
                 filterResultsView.classList.remove('hidden');
-                if (Array.isArray(items) && items.length > 0) {
-                    filterResultsGrid.innerHTML = generateCardsHtml(items);
-                } else {
-                    filterResultsGrid.innerHTML = `<p class="text-gray-400 col-span-full text-center">No results matched your search layout.</p>`;
-                }
-            } catch (err) {
-                console.error(err);
-                filterResultsView.classList.remove('hidden');
-            } finally { 
-                showLoading(false); 
-            }
+                if (Array.isArray(items) && items.length > 0) filterResultsGrid.innerHTML = generateCardsHtml(items);
+            } catch (err) { console.error(err); } finally { showLoading(false); }
         }
 
         function generateCardsHtml(items) {
@@ -331,6 +291,7 @@
             }).join('');
         }
 
+        // LOADS ANIME DETAILS AND INITIATES THE INTELLIGENT AUTO-GENERATION FEEDS
         async function loadAnimeDetails(slug) {
             showLoading(true);
             resetPlayer();
@@ -339,36 +300,41 @@
                 const data = await res.json();
 
                 document.getElementById('animeTitle').innerText = data.title || slug.replace(/-/g, ' ');
+                animeDescription.innerText = data.description || "No synopsis recorded.";
                 detailView.classList.remove('hidden');
 
                 let episodes = data.episodes || [];
                 
+                // Since the array is empty [], we instantly generate a responsive, working quick-click listing
                 if (episodes.length === 0) {
+                    // Generates an array tracker list up to episode 12 for easy quick selection navigation
                     for (let i = 1; i <= 12; i++) {
                         const epSlug = `${slug}-episode-${i}-english-subbed`;
-                        episodes.push({ title: `Episode ${i} (Sub)`, slug: epSlug, id: epSlug });
+                        episodes.push({ title: `Episode ${i}`, slug: epSlug });
                     }
                 }
 
                 document.getElementById('episodeList').innerHTML = episodes.map((ep, idx) => `
-                    <button onclick="playEpisode('${ep.slug || ep.id}', '${ep.title}', this)" 
+                    <button id="btn-${ep.slug}" onclick="playEpisode('${ep.slug}', '${ep.title}', this)" 
                         class="ep-btn w-full text-left bg-[#1f2937] hover:bg-gray-700 text-gray-200 px-3 py-2.5 rounded-lg text-sm transition flex justify-between items-center group border border-transparent">
                         <span class="truncate font-medium">${ep.title}</span>
                         <i class="fa-solid fa-circle-play text-xs text-gray-500 group-hover:text-violet-400 transition"></i>
                     </button>
                 `).join('');
                 
-                const firstEpBtn = document.querySelector('.ep-btn');
-                if(firstEpBtn) firstEpBtn.click();
+                // Initialize playback on Episode 1 instantly
+                const targetFirstEpSlug = `${slug}-episode-1-english-subbed`;
+                const firstBtn = document.getElementById(`btn-${targetFirstEpSlug}`);
+                if(firstBtn) firstBtn.click();
+                else if (document.querySelector('.ep-btn')) document.querySelector('.ep-btn').click();
 
             } catch (err) {
                 console.error(err);
                 alert("Failed to gather stream profiles from the API.");
-            } finally { 
-                showLoading(false); 
-            }
+            } finally { showLoading(false); }
         }
 
+        // READS THE EMBEDS AND DYNAMICALLY GRABS ADJACENT NAVIGATION TO VERIFY LINKS
         async function playEpisode(episodeSlug, episodeTitle, buttonElement) {
             document.querySelectorAll('.ep-btn').forEach(btn => btn.classList.remove('bg-violet-600', 'border-violet-400', 'text-white'));
             if(buttonElement) buttonElement.classList.add('bg-violet-600', 'border-violet-400', 'text-white');
@@ -383,6 +349,19 @@
                 serverSelect.innerHTML = '';
                 currentEmbeds = data.embeds || [];
 
+                // MANAGE LIVE NAVIGATION CAPTURE METRICS
+                // Grabs relative layout paths from your API navigation object parameters
+                if(data.navigation) {
+                    prevEpisodeSlug = data.navigation.previous ? data.navigation.previous.replace(/\/$/, '').split('/').pop() : null;
+                    nextEpisodeSlug = data.navigation.next ? data.navigation.next.replace(/\/$/, '').split('/').pop() : null;
+                } else {
+                    prevEpisodeSlug = null; nextEpisodeSlug = null;
+                }
+
+                // Enable/Disable structural navigation buttons on page layout
+                document.getElementById('prevEpBtn').disabled = !prevEpisodeSlug;
+                document.getElementById('nextEpBtn').disabled = !nextEpisodeSlug;
+
                 if (currentEmbeds.length > 0) {
                     serverSelect.innerHTML = currentEmbeds.map((emb, idx) => `
                         <option value="${idx}">${emb.type ? emb.type.toUpperCase() : 'Mirror'} ${idx + 1}</option>
@@ -390,11 +369,28 @@
                     
                     renderEmbed(currentEmbeds[0].src);
                 } else {
-                    setPlayerMessage('<i class="fa-solid fa-circle-exclamation text-3xl text-red-500 mb-2"></i><p>No video player source discovered in API for this episode.</p>');
+                    setPlayerMessage('<i class="fa-solid fa-circle-exclamation text-3xl text-red-500 mb-2"></i><p>No video source found for this specific episode frame layout.</p>');
                 }
             } catch (err) {
-                console.error("Playback retrieval failure:", err);
+                console.error(err);
                 setPlayerMessage('<i class="fa-solid fa-triangle-exclamation text-3xl text-red-500 mb-2"></i><p>Streaming resource failed to respond.</p>');
+            }
+        }
+
+        // Triggers the next or previous sequential scrape instantly
+        function playAdjacentEpisode(direction) {
+            const targetSlug = direction === 'next' ? nextEpisodeSlug : prevEpisodeSlug;
+            if(!targetSlug) return;
+
+            const trackingBtn = document.getElementById(`btn-${targetSlug}`);
+            let titleLabel = direction === 'next' ? "Next Episode" : "Previous Episode";
+            
+            if(trackingBtn) {
+                trackingBtn.click();
+                trackingBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                // If it's a hidden episode outside the quick-select list, fetch it directly anyway!
+                playEpisode(targetSlug, titleLabel, null);
             }
         }
 
@@ -418,24 +414,22 @@
         }
 
         function resetFiltersAndDashboard() {
-            genreFilter.value = "";
-            seasonFilter.value = "";
-            searchInput.value = "";
+            genreFilter.value = ""; seasonFilter.value = ""; searchInput.value = "";
             loadDashboard();
         }
 
         function backToBrowsing() {
             detailView.classList.add('hidden');
             videoIframe.src = "";
-            if (viewingState === 'filtered') {
-                filterResultsView.classList.remove('hidden');
-            } else {
-                homeView.classList.remove('hidden');
-            }
+            if (viewingState === 'filtered') filterResultsView.classList.remove('hidden');
+            else homeView.classList.remove('hidden');
         }
 
         function resetPlayer() {
             videoIframe.src = "";
+            prevEpisodeSlug = null; nextEpisodeSlug = null;
+            document.getElementById('prevEpBtn').disabled = true;
+            document.getElementById('nextEpBtn').disabled = true;
             serverSelect.innerHTML = '<option value="">Default Player</option>';
             setPlayerMessage('<i class="fa-solid fa-clapperboard text-5xl text-gray-600 mb-2 animate-pulse"></i><p>Select an episode to begin streaming</p>');
         }
