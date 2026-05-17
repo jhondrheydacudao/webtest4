@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimeStream - Watch Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b0f19; color: #e2e8f0; }
+        .anime-card:hover .play-btn { opacity: 1; transform: scale(1); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="bg-[#111827] border-b border-gray-800 sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <a href="#" onclick="loadHome()" class="text-2xl font-bold text-violet-500 tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-circle-play"></i> AnimeStream
+            </a>
+            <form id="searchForm" class="relative w-full md:w-96">
+                <input type="text" id="searchInput" placeholder="Search anime..." 
+                    class="w-full bg-[#1f2937] text-white pl-10 pr-4 py-2 rounded-full border border-gray-700 focus:outline-none focus:border-violet-500 transition">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400"></i>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Main Viewport -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        
+        <!-- Global Loading Spinner -->
+        <div id="loading" class="hidden flex justify-center items-center h-64">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
+        </div>
+
+        <!-- Home / Search View -->
+        <div id="homeView">
+            <h2 id="viewTitle" class="text-2xl font-bold mb-6 text-white border-l-4 border-violet-500 pl-3">Popular Releases</h2>
+            <div id="animeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+        </div>
+
+        <!-- Dedicated Player & Watch Workspace -->
+        <div id="detailView" class="hidden">
+            <button onclick="loadHome()" class="mb-6 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition text-sm">
+                <i class="fa-solid fa-arrow-left"></i> Back to Catalog
+            </button>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Video Delivery Panel -->
+                <div class="lg:col-span-2 space-y-4">
+                    
+                    <!-- Player Screen Wrapper -->
+                    <div class="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800 flex items-center justify-center">
+                        <!-- Points directly to your embed src -->
+                        <iframe id="videoIframe" src="" class="absolute top-0 left-0 w-full h-full hidden" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>
+                        
+                        <div id="playerPlaceholder" class="text-center p-4">
+                            <i class="fa-solid fa-clapperboard text-5xl text-gray-600 mb-2 animate-pulse"></i>
+                            <p class="text-gray-400">Select an episode to begin streaming</p>
+                        </div>
+                    </div>
+
+                    <!-- Video Controls & Server Switcher -->
+                    <div class="bg-[#111827] border border-gray-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
+                        <div class="max-w-md">
+                            <h1 id="animeTitle" class="text-xl font-bold text-white truncate">Loading Anime...</h1>
+                            <p id="currentEpisodeLabel" class="text-sm text-violet-400 mt-0.5">No Episode Selected</p>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Source:</span>
+                            <select id="serverSelect" onchange="switchServer()" class="bg-[#1f2937] text-white text-sm py-1.5 px-3 rounded-lg border border-gray-700 focus:outline-none focus:border-violet-500">
+                                <option value="">Loading mirrors...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Navigation Pane -->
+                <div class="bg-[#111827] p-4 rounded-xl border border-gray-800 h-[520px] flex flex-col">
+                    <div class="border-b border-gray-800 pb-3 mb-3">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol text-violet-500"></i> Available Episodes
+                        </h3>
+                    </div>
+                    <div id="episodeList" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = 'https://anime2928.vercel.app';
+        let currentEmbeds = []; // Caches current video embed array
+
+        const homeView = document.getElementById('homeView');
+        const detailView = document.getElementById('detailView');
+        const animeGrid = document.getElementById('animeGrid');
+        const loading = document.getElementById('loading');
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const videoIframe = document.getElementById('videoIframe');
+        const playerPlaceholder = document.getElementById('playerPlaceholder');
+        const serverSelect = document.getElementById('serverSelect');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHome();
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (searchInput.value.trim()) handleSearch(searchInput.value.trim());
+            });
+        });
+
+        function showLoading(isLoading) {
+            loading.classList.toggle('hidden', !isLoading);
+            if(isLoading) { homeView.classList.add('hidden'); detailView.classList.add('hidden'); }
+        }
+
+        async function loadHome() {
+            showLoading(true);
+            document.getElementById('viewTitle').innerText = "Trending & Popular Releases";
+            try {
+                const res = await fetch(`${API_BASE}/home`);
+                const data = await res.json();
+                const items = data.results || data.popular || data.latest || data;
+                
+                homeView.classList.remove('hidden');
+                if (Array.isArray(items)) renderCards(items);
+            } catch (err) {
+                animeGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Failed to fetch server dashboard feed.</p>`;
+                homeView.classList.remove('hidden');
+            } finally { showLoading(false); }
+        }
+
+        async function handleSearch(query) {
+            showLoading(true);
+            document.getElementById('viewTitle').innerText = `Search Results for "${query}"`;
+            try {
+                const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                const items = data.results || data;
+
+                homeView.classList.remove('hidden');
+                if (Array.isArray(items) && items.length > 0) {
+                    renderCards(items);
+                } else {
+                    animeGrid.innerHTML = `<p class="text-gray-400 col-span-full text-center">No media found matching that term.</p>`;
+                }
+            } catch (err) {
+                console.error(err);
+                homeView.classList.remove('hidden');
+            } finally { showLoading(false); }
+        }
+
+        function renderCards(items) {
+            animeGrid.innerHTML = items.map(item => {
+                const title = item.title || "Untitled Show";
+                const img = item.poster || item.thumbnail || item.image || "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300";
+                const slug = item.slug || item.id;
+                return `
+                    <div onclick="loadAnimeDetails('${slug}')" class="anime-card bg-[#111827] rounded-xl overflow-hidden border border-gray-800 hover:border-violet-500/50 transition duration-300 cursor-pointer shadow-lg group">
+                        <div class="relative aspect-[3/4] overflow-hidden bg-gray-900">
+                            <img src="${img}" alt="${title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <div class="play-btn absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 scale-90 transition duration-300">
+                                <i class="fa-solid fa-play text-3xl text-white bg-violet-600 p-4 rounded-full shadow-lg"></i>
+                            </div>
+                        </div>
+                        <div class="p-3"><h3 class="font-semibold text-sm line-clamp-2 text-gray-200 group-hover:text-violet-400 transition">${title}</h3></div>
+                    </div>`;
+            }).join('');
+        }
+
+        async function loadAnimeDetails(slug) {
+            showLoading(true);
+            resetPlayer();
+            try {
+                const res = await fetch(`${API_BASE}/anime/${slug}`);
+                const data = await res.json();
+
+                document.getElementById('animeTitle').innerText = data.title || slug.replace(/-/g, ' ');
+                detailView.classList.remove('hidden');
+
+                let episodes = data.episodes || [];
+                
+                // Fallback Generator if "episodes" array comes back empty from AJAX layout
+                if (episodes.length === 0) {
+                    // Generates up to 12 placeholder episodes for seamless watching
+                    for (let i = 1; i <= 12; i++) {
+                        const epSlug = `${slug}-episode-${i}-english-subbed`;
+                        episodes.push({
+                            title: `Episode ${i} (Sub)`,
+                            slug: epSlug,
+                            id: epSlug
+                        });
+                    }
+                }
+
+                document.getElementById('episodeList').innerHTML = episodes.map((ep, idx) => `
+                    <button onclick="playEpisode('${ep.slug || ep.id}', '${ep.title}', this)" 
+                        class="ep-btn w-full text-left bg-[#1f2937] hover:bg-gray-700 text-gray-200 px-3 py-2.5 rounded-lg text-sm transition flex justify-between items-center group border border-transparent">
+                        <span class="truncate font-medium">${ep.title}</span>
+                        <i class="fa-solid fa-circle-play text-xs text-gray-500 group-hover:text-violet-400 transition"></i>
+                    </button>
+                `).join('');
+                
+                // Instantly load episode 1
+                const firstEpBtn = document.querySelector('.ep-btn');
+                if(firstEpBtn) firstEpBtn.click();
+
+            } catch (err) {
+                console.error(err);
+                alert("Failed to gather stream profiles from the API.");
+            } finally { showLoading(false); }
+        }
+
+        // FETCHES AND RECONSTRUCTS VIDEO LINK MATCHING YOUR EXACT RESPONSE
+        async function playEpisode(episodeSlug, episodeTitle, buttonElement) {
+            document.querySelectorAll('.ep-btn').forEach(btn => btn.classList.remove('bg-violet-600', 'border-violet-400', 'text-white'));
+            if(buttonElement) buttonElement.classList.add('bg-violet-600', 'border-violet-400', 'text-white');
+
+            document.getElementById('currentEpisodeLabel').innerText = episodeTitle;
+            setPlayerMessage('<i class="fa-solid fa-spinner animate-spin text-3xl mb-2 text-violet-500"></i><p>Scraping video embed url...</p>');
+
+            try {
+                // Pointing to your verified endpoint layout
+                const res = await fetch(`${API_BASE}/episode/${episodeSlug}`);
+                const data = await res.json();
+
+                serverSelect.innerHTML = '';
+                currentEmbeds = data.embeds || [];
+
+                if (currentEmbeds.length > 0) {
+                    // Populate the player source selection drop-down menu
+                    serverSelect.innerHTML = currentEmbeds.map((emb, idx) => `
+                        <option value="${idx}">${emb.type ? emb.type.toUpperCase() : 'Mirror'} ${idx + 1}</option>
+                    `).join('');
+                    
+                    // Fire up the iframe player using the exact "src" key from your response
+                    renderEmbed(currentEmbeds[0].src);
+                } else {
+                    setPlayerMessage('<i class="fa-solid fa-circle-exclamation text-3xl text-red-500 mb-2"></i><p>No video player source discovered in API for this episode.</p>');
+                }
+            } catch (err) {
+                console.error("Playback retrieval failure:", err);
+                setPlayerMessage('<i class="fa-solid fa-triangle-exclamation text-3xl text-red-500 mb-2"></i><p>Streaming resource failed to respond.</p>');
+            }
+        }
+
+        function switchServer() {
+            const index = serverSelect.value;
+            if (currentEmbeds[index]) {
+                renderEmbed(currentEmbeds[index].src);
+            }
+        }
+
+        function renderEmbed(srcUrl) {
+            if (!srcUrl) return;
+            videoIframe.src = "";
+            playerPlaceholder.classList.add('hidden');
+            
+            // Displays and runs the streaming iframe link perfectly
+            videoIframe.classList.remove('hidden');
+            videoIframe.src = srcUrl;
+        }
+
+        function setPlayerMessage(htmlContent) {
+            playerPlaceholder.innerHTML = htmlContent;
+            playerPlaceholder.classList.remove('hidden');
+            videoIframe.classList.add('hidden');
+        }
+
+        function resetPlayer() {
+            videoIframe.src = "";
+            serverSelect.innerHTML = '<option value="">Default Player</option>';
+            setPlayerMessage('<i class="fa-solid fa-clapperboard text-5xl text-gray-600 mb-2 animate-pulse"></i><p>Select an episode to begin streaming</p>');
+        }
+    </script>
+</body>
+</html>
