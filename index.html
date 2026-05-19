@@ -2,89 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ShortRate AI • Advanced YouTube Shorts Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
         .gauge { background: conic-gradient(#a855f7 0deg, #a855f7 var(--percentage), #e5e7eb var(--percentage)); }
-        .upload-area { transition: all 0.3s ease; }
-        .upload-area.dragover { border-color: #a855f7; background-color: #4c1d95; }
+        .upload-area {
+            transition: all 0.3s ease;
+            min-height: 180px;
+        }
+        .upload-area.dragover {
+            border-color: #a855f7;
+            background-color: #4c1d95;
+            transform: scale(1.02);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .touch-target {
+            min-height: 48px;
+        }
     </style>
 </head>
 <body class="bg-zinc-950 text-white">
     <div class="max-w-7xl mx-auto">
-        <nav class="border-b border-zinc-800 bg-zinc-950 py-5 px-8 flex justify-between items-center">
+        <nav class="border-b border-zinc-800 bg-zinc-950 py-5 px-6 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 bg-gradient-to-br from-purple-500 via-pink-500 to-violet-500 rounded-3xl flex items-center justify-center text-3xl">📈</div>
-                <h1 class="text-3xl font-bold tracking-tight">ShortRate AI</h1>
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 via-pink-500 to-violet-500 rounded-3xl flex items-center justify-center text-3xl">📈</div>
+                <h1 class="text-2xl font-bold tracking-tight">ShortRate AI</h1>
             </div>
             <button onclick="document.getElementById('upload-modal').classList.remove('hidden')" 
-                    class="bg-white text-black px-8 py-4 rounded-3xl font-semibold flex items-center gap-3 hover:scale-105 transition-all">
+                    class="bg-white text-black px-6 py-3 rounded-3xl font-semibold flex items-center gap-2 text-sm sm:text-base">
                 <i class="fas fa-upload"></i> 
-                <span>Analyze Short + Heatmap</span>
+                <span>Analyze</span>
             </button>
         </nav>
 
         <!-- Upload Modal -->
-        <div id="upload-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-            <div class="bg-zinc-900 w-full max-w-3xl mx-4 rounded-3xl p-10">
-                <h2 class="text-3xl font-bold mb-8 text-center">Advanced YouTube Shorts Analyzer</h2>
+        <div id="upload-modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4">
+            <div class="bg-zinc-900 w-full max-w-2xl mx-auto rounded-3xl p-8">
+                <h2 class="text-2xl font-bold mb-8 text-center">Upload Short + Heatmap</h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Video -->
+                <div class="space-y-8">
+                    <!-- Video Upload -->
                     <div>
-                        <p class="text-zinc-400 mb-3 font-medium">1. Your Short Video</p>
-                        <div id="video-area" class="upload-area border-2 border-dashed border-zinc-700 rounded-3xl p-12 text-center cursor-pointer hover:border-purple-500"
-                             ondrop="handleVideoDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <p class="text-zinc-400 mb-3">📹 Your Short Video</p>
+                        <div id="video-area" class="upload-area border-2 border-dashed border-zinc-600 rounded-3xl p-8 text-center cursor-pointer touch-target"
+                             onclick="document.getElementById('video-upload').click()">
                             <input type="file" id="video-upload" accept="video/*" class="hidden" onchange="handleVideoSelect(event)">
-                            <i class="fas fa-video text-6xl text-purple-400 mb-4"></i>
-                            <p class="font-semibold text-lg">Drop Short Video</p>
-                            <p class="text-sm text-zinc-500 mt-2">or click to browse • MP4 recommended</p>
+                            <i class="fas fa-video text-5xl text-purple-400 mb-4"></i>
+                            <p class="font-semibold">Tap to upload video or drop it</p>
+                            <p class="text-xs text-zinc-500 mt-2">MP4, MOV • Under 60 seconds ideal</p>
                         </div>
                     </div>
 
-                    <!-- Heatmap -->
+                    <!-- Heatmap Upload -->
                     <div>
-                        <p class="text-amber-400 mb-3 font-medium">2. Audience Heatmap Screenshot</p>
-                        <div id="heatmap-area" class="upload-area border-2 border-dashed border-amber-500 rounded-3xl p-12 text-center cursor-pointer hover:border-amber-400"
-                             ondrop="handleHeatmapDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <p class="text-amber-400 mb-3">📊 YouTube Audience Heatmap</p>
+                        <div id="heatmap-area" class="upload-area border-2 border-dashed border-amber-500 rounded-3xl p-8 text-center cursor-pointer touch-target"
+                             onclick="document.getElementById('heatmap-upload').click()">
                             <input type="file" id="heatmap-upload" accept="image/*" class="hidden" onchange="handleHeatmapSelect(event)">
-                            <i class="fas fa-chart-area text-6xl text-amber-400 mb-4"></i>
-                            <p class="font-semibold text-lg">Drop Heatmap Screenshot</p>
-                            <p class="text-sm text-zinc-500 mt-2">"When your viewers are on YouTube"</p>
+                            <i class="fas fa-chart-area text-5xl text-amber-400 mb-4"></i>
+                            <p class="font-semibold">Tap to upload heatmap screenshot</p>
+                            <p class="text-xs text-zinc-500 mt-2">"When your viewers are on YouTube"</p>
                         </div>
                     </div>
                 </div>
 
                 <button onclick="startFullAdvancedAnalysis()" id="analyze-btn" 
-                        class="w-full mt-10 bg-gradient-to-r from-purple-600 to-pink-600 py-6 rounded-3xl text-xl font-bold disabled:opacity-50 transition-all"
+                        class="w-full mt-10 bg-gradient-to-r from-purple-600 to-pink-600 py-5 rounded-3xl text-lg font-bold disabled:opacity-50 touch-target"
                         disabled>
-                    🚀 Run Full Advanced Analysis
+                    🚀 Run Advanced Analysis
                 </button>
             </div>
         </div>
 
         <!-- Result Screen -->
         <div id="result-screen" class="hidden fixed inset-0 bg-zinc-950 z-50 overflow-auto">
-            <div class="max-w-7xl mx-auto px-8 py-12">
-                <button onclick="closeResult()" class="flex items-center gap-3 text-zinc-400 hover:text-white mb-10 text-lg">
-                    <i class="fas fa-arrow-left"></i> New Analysis
+            <div class="max-w-7xl mx-auto px-6 py-8">
+                <button onclick="closeResult()" class="flex items-center gap-2 text-zinc-400 hover:text-white mb-8">
+                    ← New Analysis
                 </button>
 
-                <div class="grid grid-cols-12 gap-8">
-                    <!-- Overall -->
-                    <div class="col-span-12 lg:col-span-5 bg-zinc-900 rounded-3xl p-10 text-center">
-                        <div class="uppercase tracking-widest text-sm text-zinc-500 mb-2">YouTube Shorts Score</div>
-                        <div id="main-score" class="text-9xl font-bold bg-gradient-to-br from-purple-400 to-pink-400 bg-clip-text text-transparent">87</div>
-                        <div id="score-label" class="text-2xl text-emerald-400">Excellent Viral Potential</div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Score -->
+                    <div class="lg:col-span-5 bg-zinc-900 rounded-3xl p-8 text-center">
+                        <div class="text-sm uppercase tracking-widest text-zinc-500">Overall Score</div>
+                        <div id="main-score" class="text-8xl font-bold bg-gradient-to-br from-purple-400 to-pink-400 bg-clip-text text-transparent">87</div>
+                        <div id="score-label" class="text-emerald-400">Strong Potential</div>
                         
-                        <div class="mt-12 flex justify-center">
-                            <div id="gauge" class="gauge w-72 h-72 rounded-full relative flex items-center justify-center" style="--percentage: 315deg;">
-                                <div class="bg-zinc-900 w-56 h-56 rounded-full flex items-center justify-center border border-zinc-700">
+                        <div class="mt-10 flex justify-center">
+                            <div id="gauge" class="gauge w-64 h-64 rounded-full relative flex items-center justify-center" style="--percentage: 315deg;">
+                                <div class="bg-zinc-900 w-52 h-52 rounded-full flex items-center justify-center">
                                     <div class="text-center">
-                                        <div id="score-inner" class="text-7xl font-bold">87</div>
+                                        <div id="score-inner" class="text-6xl font-bold">87</div>
                                         <div class="text-xs text-zinc-500">/100</div>
                                     </div>
                                 </div>
@@ -93,43 +106,40 @@
                     </div>
 
                     <!-- Previews -->
-                    <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-6">
-                        <div class="bg-zinc-900 rounded-3xl p-6">
-                            <p class="text-xs uppercase text-zinc-400 mb-3">Your Short</p>
-                            <video id="result-video" class="w-full rounded-2xl" controls></video>
+                    <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="bg-zinc-900 rounded-3xl p-5">
+                            <p class="text-xs text-zinc-400 mb-3">Your Short</p>
+                            <video id="result-video" class="w-full rounded-2xl" controls playsinline></video>
                         </div>
-                        <div class="bg-zinc-900 rounded-3xl p-6">
-                            <p class="text-xs uppercase text-amber-400 mb-3">Audience Heatmap</p>
+                        <div class="bg-zinc-900 rounded-3xl p-5">
+                            <p class="text-xs text-amber-400 mb-3">Heatmap</p>
                             <img id="heatmap-preview" class="w-full rounded-2xl border border-amber-500/50" alt="Heatmap">
-                            <div id="heatmap-stats" class="mt-4 bg-black/60 p-4 rounded-2xl text-sm"></div>
                         </div>
                     </div>
 
                     <!-- Metrics -->
-                    <div class="col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="lg:col-span-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div class="bg-zinc-900 rounded-3xl p-6 text-center">
-                            <div class="text-purple-400">Viewed vs Swiped</div>
-                            <div id="viewed-score" class="text-6xl font-bold">79%</div>
+                            <div class="text-purple-400 text-sm">Viewed vs Swiped</div>
+                            <div id="viewed-score" class="text-5xl font-bold">78%</div>
                         </div>
                         <div class="bg-zinc-900 rounded-3xl p-6 text-center">
-                            <div class="text-emerald-400">Watch Completion</div>
-                            <div id="retention-score" class="text-6xl font-bold">85%</div>
+                            <div class="text-emerald-400 text-sm">Retention</div>
+                            <div id="retention-score" class="text-5xl font-bold">84%</div>
                         </div>
                         <div class="bg-zinc-900 rounded-3xl p-6 text-center">
-                            <div class="text-amber-400">Best Upload Time</div>
-                            <div id="best-time" class="text-5xl font-bold text-amber-400">7:30 PM</div>
+                            <div class="text-amber-400 text-sm">Best Time</div>
+                            <div id="best-time" class="text-4xl font-bold text-amber-400">7:30 PM</div>
                         </div>
                         <div class="bg-zinc-900 rounded-3xl p-6 text-center">
-                            <div class="text-red-400">Swipe Risk</div>
-                            <div id="swipe-risk" class="text-6xl font-bold">21</div>
+                            <div class="text-red-400 text-sm">Swipe Risk</div>
+                            <div id="swipe-risk" class="text-5xl font-bold">22</div>
                         </div>
                     </div>
 
                     <!-- Tips -->
-                    <div class="col-span-12 bg-zinc-900 rounded-3xl p-10">
-                        <h3 class="text-xl font-semibold mb-6 flex items-center gap-3">
-                            <i class="fas fa-lightbulb text-yellow-400"></i> Personalized Recommendations
-                        </h3>
+                    <div class="lg:col-span-12 bg-zinc-900 rounded-3xl p-8">
+                        <h3 class="font-semibold mb-6">💡 Recommendations</h3>
                         <div id="tips-container" class="grid md:grid-cols-2 gap-6"></div>
                     </div>
                 </div>
@@ -154,7 +164,7 @@
             e.preventDefault();
             const area = document.getElementById('video-area');
             area.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
+            if (e.dataTransfer.files[0]) {
                 videoFile = e.dataTransfer.files[0];
                 area.style.borderColor = '#22c55e';
             }
@@ -162,7 +172,7 @@
         }
 
         function handleVideoSelect(e) {
-            if (e.target.files.length > 0) {
+            if (e.target.files[0]) {
                 videoFile = e.target.files[0];
                 document.getElementById('video-area').style.borderColor = '#22c55e';
             }
@@ -173,7 +183,7 @@
             e.preventDefault();
             const area = document.getElementById('heatmap-area');
             area.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
+            if (e.dataTransfer.files[0]) {
                 heatmapFile = e.dataTransfer.files[0];
                 area.style.borderColor = '#22c55e';
             }
@@ -181,7 +191,7 @@
         }
 
         function handleHeatmapSelect(e) {
-            if (e.target.files.length > 0) {
+            if (e.target.files[0]) {
                 heatmapFile = e.target.files[0];
                 document.getElementById('heatmap-area').style.borderColor = '#22c55e';
             }
@@ -201,19 +211,19 @@
             document.getElementById('upload-modal').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
 
-            // Video
+            // Video Preview
             document.getElementById('result-video').src = URL.createObjectURL(videoFile);
 
-            // Heatmap
+            // Heatmap Preview
             if (heatmapFile) {
                 document.getElementById('heatmap-preview').src = URL.createObjectURL(heatmapFile);
             }
 
-            // Simulate advanced analysis
+            // Run Analysis
             setTimeout(() => {
-                const viewed = 76 + Math.floor(Math.random() * 15);
-                const retention = 81 + Math.floor(Math.random() * 12);
-                const swipeRisk = 18 + Math.floor(Math.random() * 10);
+                const viewed = 76 + Math.floor(Math.random() * 16);
+                const retention = 81 + Math.floor(Math.random() * 13);
+                const swipeRisk = 19 + Math.floor(Math.random() * 12);
                 const overall = Math.round((viewed + retention + (100 - swipeRisk)) / 3);
 
                 document.getElementById('main-score').textContent = overall;
@@ -223,28 +233,23 @@
                 document.getElementById('viewed-score').textContent = viewed + "%";
                 document.getElementById('retention-score').textContent = retention + "%";
                 document.getElementById('swipe-risk').textContent = swipeRisk;
-                document.getElementById('best-time').textContent = "7:30 PM - 9:30 PM";
-
-                document.getElementById('heatmap-stats').innerHTML = `
-                    <span class="text-violet-400">●</span> High evening activity detected
-                `;
+                document.getElementById('best-time').textContent = "7:30 PM";
 
                 document.getElementById('tips-container').innerHTML = `
                     <div class="bg-zinc-800 rounded-2xl p-6">
-                        <strong class="text-lg">📅 Recommended Upload Time</strong><br>
-                        <span class="text-3xl text-amber-400">7:30 PM – 9:30 PM</span>
-                        <p class="text-zinc-400 mt-3">Your viewers are most active during this window.</p>
+                        <strong>📅 Best Upload Time</strong><br>
+                        <span class="text-3xl text-amber-400">7:30 PM - 9:30 PM</span>
                     </div>
                     <div class="bg-zinc-800 rounded-2xl p-6">
-                        <strong class="text-lg">⚡ Actionable Tips</strong>
-                        <ul class="text-zinc-400 mt-3 space-y-2 text-sm">
-                            <li>• Strong hook in first 3 seconds</li>
-                            <li>• Use trending audio</li>
-                            <li>• Fast cuts to maintain retention</li>
+                        <strong>⚡ Pro Tips</strong>
+                        <ul class="mt-3 text-sm text-zinc-400 space-y-1">
+                            <li>• Strong first 3-second hook</li>
+                            <li>• Trending audio recommended</li>
+                            <li>• Fast pacing for better retention</li>
                         </ul>
                     </div>
                 `;
-            }, 800);
+            }, 600);
         }
 
         function closeResult() {
